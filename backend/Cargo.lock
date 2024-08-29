@@ -1536,6 +1536,7 @@ dependencies = [
  "log",
  "mysql",
  "serde",
+ "serde_json",
 ]
 
 [[package]]

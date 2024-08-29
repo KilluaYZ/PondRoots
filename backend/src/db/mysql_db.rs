@@ -5,6 +5,7 @@ use core::option::Option;
 
 // 用来处理日期
 
+#[derive(Clone)]
 pub struct MySqlDB{
     pool: Pool
 }
