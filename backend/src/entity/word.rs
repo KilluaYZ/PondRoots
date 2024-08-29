@@ -1,9 +1,11 @@
 use std::ops::Index;
 use actix_web::cookie::time::Date;
 use mysql::{from_value, Row, Value};
-use mysql::Value::Time;
 use serde::{Deserialize, Serialize};
 use core::option::Option;
+use crate::common::my_error::MyError;
+use crate::db::mysql_db::MySqlDB;
+use crate::entity::roots_affixes::RootsAffixes;
 
 #[derive(Deserialize, Serialize)]
 pub struct Word{
@@ -16,6 +18,7 @@ pub struct Word{
     notes: Option<String>,
     create_time: Option<String>,
     update_time: Option<String>,
+    roots_affixes: Option<Vec<RootsAffixes>>
 }
 
 impl Word{
@@ -31,6 +34,7 @@ impl Word{
                 create_time: None,
                 update_time: None,
                 notes: None,
+                roots_affixes: None
             }
         }
     }
@@ -87,8 +91,13 @@ impl  WordBuilder{
         self
     }
 
-    pub fn from_row(self, row: &Row) -> Word{
-        let mut word = Word::new();
+    pub fn roots_affixes(mut self, roots_affixes: Vec<RootsAffixes>) -> Self {
+        self.word.roots_affixes = Option::from(roots_affixes);
+        self
+    }
+
+    pub fn from_row(self, row: Row, db: &MySqlDB) -> Result<Word, MyError>{
+        let mut builder = Word::new();
         let id = row.index(0).clone();
         let british_word = row.index(1).clone();
         let american_word = row.index(2).clone();
@@ -98,34 +107,46 @@ impl  WordBuilder{
         let notes = row.index(6).clone();
         let create_time = row.index(7).clone();
         let update_time = row.index(8).clone();
+
+        // 获取单词的词根词缀
+        let roots_affixes = match RootsAffixes::new().from_word_id(from_value::<u32>(id.clone()), db){
+            Ok(val) => val,
+            Err(e) => {
+                return Err(e)
+            }
+        };
+
         if id != Value::NULL{
-            word = word.id(from_value::<u32>(id));
+            builder = builder.id(from_value::<u32>(id));
         }
         if british_word != Value::NULL{
-            word = word.british_word(from_value::<String>(british_word));
+            builder = builder.british_word(from_value::<String>(british_word));
         }
         if american_word != Value::NULL{
-            word = word.american_word(from_value::<String>(american_word));
+            builder = builder.american_word(from_value::<String>(american_word));
         }
         if british_soundmark != Value::NULL{
-            word = word.british_soundmark(from_value::<String>(british_soundmark));
+            builder = builder.british_soundmark(from_value::<String>(british_soundmark));
         }
         if american_soundmark != Value::NULL{
-            word = word.american_soundmark(from_value::<String>(american_soundmark));
+            builder = builder.american_soundmark(from_value::<String>(american_soundmark));
         }
         if comment != Value::NULL{
-            word = word.comment(from_value::<String>(comment));
+            builder = builder.comment(from_value::<String>(comment));
         }
         if notes != Value::NULL{
-            word = word.notes(from_value::<String>(notes));
+            builder = builder.notes(from_value::<String>(notes));
         }
         if create_time != Value::NULL{
-            word = word.create_time(from_value::<Date>(create_time));
+            builder = builder.create_time(from_value::<Date>(create_time));
         }
         if update_time != Value::NULL{
-            word = word.update_time(from_value::<Date>(update_time));
+            builder = builder.update_time(from_value::<Date>(update_time));
         }
-        word.build()
+
+        builder = builder.roots_affixes(roots_affixes);
+
+        Ok(builder.build())
     }
 
     pub fn build(self) -> Word {

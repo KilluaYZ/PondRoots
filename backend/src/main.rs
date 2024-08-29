@@ -27,7 +27,6 @@ async fn main() -> std::io::Result<()>{
         App::new()
             .app_data(app_state.clone())
             .service(get_word_handler)
-            .service(echo_word_handler)
     })
         .bind(("127.0.0.1", 8080))?
         .run()

@@ -31,12 +31,17 @@ pub async fn get_word_handler(req_body: String, data: web::Data<AppState>) -> im
             return build_internal_server_error_response::<Vec<u32>>(vec![0], format!("服务器内部错误，错误原因：{}", error))
         }
     };
-    let word_list = query_res.iter().map(|row| Word::new().from_row(row)).collect();
-    build_ok_response::<Vec<Word>>(word_list)
-}
+    let mut word_list = Vec::<Word>::new();
 
-#[post("/word/echo")]
-pub async fn echo_word_handler(req_body: String) -> impl Responder {
-    println!("req_body = {}", req_body);
-    HttpResponse::Ok().body(req_body)
+    for row in query_res{
+        let tmp_word = match Word::new().from_row(row, db){
+            Ok(val) => val,
+            Err(e) => {
+                return build_internal_server_error_response::<Vec<u32>>(vec![0], format!("服务器内部错误，错误原因：{}", e))
+            }
+        };
+        word_list.push(tmp_word);
+    }
+
+    build_ok_response::<Vec<Word>>(word_list)
 }
