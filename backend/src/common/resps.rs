@@ -22,10 +22,10 @@ pub fn build_ok_response<T: Serialize>(resp_data: T) -> HttpResponse {
     HttpResponse::Ok().body(build_resp::<T>(200, String::from("操作成功"), resp_data))
 }
 
-pub fn build_internal_server_error_response<T: Serialize>(resp_data: T) -> HttpResponse {
-    HttpResponse::InternalServerError().body(build_resp::<T>(500, String::from("服务器内部错误"), resp_data))
+pub fn build_internal_server_error_response<T: Serialize>(resp_data: T, msg: String) -> HttpResponse {
+    HttpResponse::InternalServerError().body(build_resp::<T>(500, String::from(format!("服务器内部错误: {}", msg)), resp_data))
 }
 
-pub fn build_bad_request_response<T: Serialize>(resp_data: T) -> HttpResponse {
-    HttpResponse::BadRequest().body(build_resp::<T>(400, String::from("请求参数错误"), resp_data))
+pub fn build_bad_request_response<T: Serialize>(resp_data: T, msg: String) -> HttpResponse {
+    HttpResponse::BadRequest().body(build_resp::<T>(400, String::from(format!("请求参数错误: {}", msg)), resp_data))
 }
